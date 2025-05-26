@@ -114,6 +114,14 @@ def build_everything(args: arg_util.Args):
         'ada_gss', 'moe_bias',
         'scale_mul',
     })
+
+    #!! 🔧 LoRA 관련 파라미터만 남기기
+    lora_idx = [i for i, name in enumerate(names) if 'lora' in name.lower()]
+    names = [names[i] for i in lora_idx]
+    paras = [paras[i] for i in lora_idx]
+    para_groups = [para_groups[i] for i in lora_idx]
+    #!! #########################
+
     opt_clz = {
         'adam':  partial(torch.optim.AdamW, betas=(0.9, 0.95), fused=args.afuse),
         'adamw': partial(torch.optim.AdamW, betas=(0.9, 0.95), fused=args.afuse),
@@ -219,6 +227,7 @@ def main_training():
                 local_out_ckpt = os.path.join(args.local_out_dir_path, 'ar-ckpt-last.pth')
                 local_out_ckpt_best = os.path.join(args.local_out_dir_path, 'ar-ckpt-best.pth')
                 print(f'[saving ckpt] ...', end='', flush=True)
+                #? 전체 모델 + LoRA 포함 .pth 저장
                 torch.save({
                     'epoch':    ep+1,
                     'iter':     0,
@@ -228,6 +237,15 @@ def main_training():
                 if best_updated:
                     shutil.copy(local_out_ckpt, local_out_ckpt_best)
                 print(f'     [saving ckpt](*) finished!  @ {local_out_ckpt}', flush=True, clean=True)
+                #! 만약 다른 모델에도 같은 LoRA를 적용시킬것이라면 -> LoRA 파라미터만 저장
+                # lora_only = {
+                #     k: v for k, v in trainer.var_wo_ddp.state_dict().items()
+                #     if 'lora' in k.lower()
+                # }
+                # lora_save_path = os.path.join(args.local_out_dir_path, f'lora_ep{ep+1}.pth')
+                # torch.save(lora_only, lora_save_path)
+                # print(f'     [saving lora-only weights] done @ {lora_save_path}')
+                #! #################
             dist.barrier()
         
         print(    f'     [ep{ep}]  (training )  Lm: {best_L_mean:.3f} ({L_mean:.3f}), Lt: {best_L_tail:.3f} ({L_tail:.3f}),  Acc m&t: {best_acc_mean:.2f} {best_acc_tail:.2f},  Remain: {remain_time},  Finish: {finish_time}', flush=True)
