@@ -1,23 +1,20 @@
 FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
 
-RUN apt-get update && apt-get install -y git wget unzip tree vim && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
 
-ARG LOCAL_USER_ID=1002
-ARG LOCAL_GROUP_ID=1002
+# 기본 패키지 설치
+RUN apt-get update && apt-get install -y \
+    python3-pip wget git tree \
+    && apt-get clean
 
-RUN groupadd -g $LOCAL_GROUP_ID user && \
-    useradd -m -d /workspace -u $LOCAL_USER_ID -g $LOCAL_GROUP_ID -s /bin/bash user
-
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
-RUN pip install jupyterlab notebook
-
-ENV PATH="/opt/conda/bin:$PATH"
-ENV PATH="$HOME/.local/bin:$PATH"
-
-USER user
 WORKDIR /workspace
 
-CMD ["/bin/bash"]
+# pip 업그레이드
+RUN python3 -m pip install --upgrade pip
 
+# requirements.txt 복사 후 설치
+COPY requirements.txt /workspace/requirements.txt
+RUN pip install -r /workspace/requirements.txt
+
+# 진입점은 shell
+CMD ["/bin/bash"]
