@@ -6,6 +6,9 @@ import torch.nn.functional as F
 
 from models.helpers import DropPath, drop_path
 
+#! Add lora import
+from models.lora_utils import LoRALinear
+
 
 # this file only provides the 3 blocks used in VAR transformer
 __all__ = ['FFN', 'AdaLNSelfAttn', 'AdaLNBeforeHead']
@@ -36,7 +39,9 @@ class FFN(nn.Module):
         self.fused_mlp_func = fused_mlp_func if fused_if_available else None
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features)
+        #! 지금은 단순성 유지 위해 fc2, SelfAttention에는 LoRA 안 넣음
+        # self.fc1 = nn.Linear(in_features, hidden_features)
+        self.fc1 = LoRALinear(in_features, hidden_features, rank=4, lora_only=False)
         self.act = nn.GELU(approximate='tanh')
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop, inplace=True) if drop > 0 else nn.Identity()

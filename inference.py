@@ -31,7 +31,8 @@ if 'vae' not in globals() or 'var' not in globals():
 
 # # load checkpoints
 vae.load_state_dict(torch.load(vae_ckpt, map_location='cpu'), strict=True)
-var.load_state_dict(torch.load(var_ckpt, map_location='cpu'), strict=True)
+#! 잠시 strict=False로 해서 추론으로 lora 작동하는지 체크
+var.load_state_dict(torch.load(var_ckpt, map_location='cpu'), strict=False)
 vae.eval(), var.eval()
 for p in vae.parameters(): p.requires_grad_(False)
 for p in var.parameters(): p.requires_grad_(False)
